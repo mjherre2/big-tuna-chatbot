@@ -1,18 +1,23 @@
-from langchain.chains import ConversationalRetrievalChain
-from langchain.chat_models import ChatOpenAI
+from langchain_community.llms import Ollama
+from langchain.chains import RetrievalQA
 from langchain.vectorstores import FAISS
-from langchain.memory import ConversationBufferMemory
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 
-retriever = FAISS.load_local("app/vectorstore", OpenAIEmbeddings()).as_retriever()
-memory = ConversationBufferMemory(return_messages=True)
-llm = ChatOpenAI(model="gpt-4")
+# Load vectorstore
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+vectorstore = FAISS.load_local("vectorstore", embeddings)
+retriever = vectorstore.as_retriever()
 
-chain = ConversationalRetrievalChain.from_llm(
+# Load LLM
+llm = Ollama(model="llama3")
+
+# Build RAG chain
+qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
     retriever=retriever,
-    memory=memory
+    return_source_documents=True
 )
 
-def get_chat_response(query: str):
-    return chain.run(query)
+def answer_question(query: str):
+    result = qa_chain({"query": query})
+    return result["result"]

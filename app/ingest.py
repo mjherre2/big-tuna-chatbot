@@ -1,19 +1,18 @@
-from langchain.document_loaders import PyPDFLoader
+from langchain.document_loaders import DirectoryLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
-import os
 
-def ingest_pdf(file):
-    path = f"data/{file.filename}"
-    with open(path, "wb") as f:
-        f.write(file.file.read())
+def ingest_documents():
+    loader = DirectoryLoader("docs/", loader_cls=TextLoader)
+    documents = loader.load()
 
-    loader = PyPDFLoader(path)
-    docs = loader.load()
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-    split_docs = splitter.split_documents(docs)
+    chunks = splitter.split_documents(documents)
 
-    embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.from_documents(split_docs, embeddings)
-    vectorstore.save_local("app/vectorstore")
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    vectorstore = FAISS.from_documents(chunks, embeddings)
+    vectorstore.save_local("vectorstore")
+
+if __name__ == "__main__":
+    ingest_documents()

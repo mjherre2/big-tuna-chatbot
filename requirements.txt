@@ -1,7 +1,3 @@
-fastapi
-uvicorn
-langchain
-openai
-faiss-cpu
+streamlit
+requests
 python-dotenv
-tiktoken
